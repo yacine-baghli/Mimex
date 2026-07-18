@@ -9,6 +9,8 @@ coverage/
 .ginse-debug/
 fixtures/videos/*
 !fixtures/videos/.gitkeep
+/video_demo.mov
+/clients.txt
 .agents/skills/*
 !.agents/skills/.gitkeep
 *.log

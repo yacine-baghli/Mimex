@@ -4,7 +4,12 @@ import { prepareVideo } from "@ginse/video-pipeline";
 import { createEvidenceManifest } from "./render.js";
 import { lintSkillSpec, type SkillLintResult } from "./lint.js";
 import { createMockSkillSpec } from "./mock.js";
-import { analyzeVideoWithOpenAI, transcribeVideoAudio } from "./openai.js";
+import {
+  analyzeVideoWithOpenAI,
+  proposeVideoGoalWithOpenAI,
+  transcribeVideoAudio,
+  type VideoGoalProposal,
+} from "./openai.js";
 import { installSkill, type InstalledSkill } from "./install.js";
 import { SkillTargetSchema, type GeneratedSkillSpec, type SkillTarget } from "./schema.js";
 
@@ -27,6 +32,48 @@ export type CompileSkillResult = {
   installed: InstalledSkill | null;
   durationMs: number;
 };
+
+export type ProposeGoalResult = {
+  proposal: VideoGoalProposal;
+  durationMs: number;
+  frameCount: number;
+  hasNarration: boolean;
+};
+
+export async function proposeGoalFromVideo(videoPath: string): Promise<ProposeGoalResult> {
+  const prepared = await prepareVideo({
+    videoPath: resolve(videoPath),
+    keepArtifacts: process.env.GINSE_KEEP_ARTIFACTS === "1",
+  });
+
+  try {
+    const useMock = process.env.GINSE_MOCK === "1";
+    const client = useMock ? null : new OpenAI();
+    const transcript = client ? await transcribeVideoAudio(client, prepared.audioPath) : [];
+    const proposal = client
+      ? await proposeVideoGoalWithOpenAI(client, prepared, transcript)
+      : {
+          goal: "Créer une nouvelle fiche client dans le CRM",
+          summary: "Ouvrir le formulaire client, renseigner les informations puis enregistrer la fiche.",
+          observedActions: [
+            "Ouvrir le formulaire de création",
+            "Renseigner les informations du client",
+            "Enregistrer la fiche",
+          ],
+          uncertainties: [],
+          confidence: 0.95,
+        };
+
+    return {
+      proposal,
+      durationMs: prepared.durationMs,
+      frameCount: prepared.frames.length,
+      hasNarration: transcript.length > 0,
+    };
+  } finally {
+    await prepared.cleanup();
+  }
+}
 
 export async function compileSkillFromVideo(
   options: CompileSkillOptions,

@@ -6,8 +6,10 @@
   "packageManager": "pnpm@10.13.1",
   "scripts": {
     "build": "pnpm -r build",
-    "dev": "pnpm --filter @ginse/demo-crm dev",
-    "dev:mcp": "pnpm --filter @ginse/mcp dev",
+    "dev": "pnpm --parallel --filter @ginse/demo-crm --filter @ginse/mcp dev",
+    "dev:crm": "pnpm --filter @ginse/demo-crm dev",
+    "dev:mcp": "pnpm --filter @ginse/mcp dev:mcp",
+    "dev:api": "pnpm --filter @ginse/mcp dev",
     "ginse:compile": "pnpm --filter @ginse/mcp compile",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"

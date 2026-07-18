@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { installSkill } from "./install.js";
 import { lintSkillSpec } from "./lint.js";
 import { createMockSkillSpec } from "./mock.js";
+import { normalizeGeneratedSkillSpec } from "./openai.js";
 import { createEvidenceManifest, renderSkillMarkdown, slugifySkillName } from "./render.js";
 
 const temporaryDirectories: string[] = [];
@@ -73,5 +74,21 @@ describe("skill lint", () => {
     });
     spec.openQuestions = ["Quel champ correspond à la priorité ?"];
     expect(lintSkillSpec(spec).readyToReplay).toBe(false);
+  });
+
+  it("does not block when unseen dropdown options are the only uncertainty", () => {
+    const spec = createMockSkillSpec("Créer une fiche client", {
+      kind: "browser",
+      appName: "GINSE Demo CRM",
+      startUrl: "http://localhost:3000",
+    });
+    spec.readyToReplay = false;
+    spec.openQuestions = [
+      "La liste Priorité contient-elle exactement les valeurs visibles ou d’autres options existent-elles ?",
+    ];
+
+    const normalized = normalizeGeneratedSkillSpec(spec);
+    expect(normalized.openQuestions).toEqual([]);
+    expect(normalized.readyToReplay).toBe(true);
   });
 });
