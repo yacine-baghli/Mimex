@@ -12,6 +12,10 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   },
+  "dependencies": {
+    "openai": "^6.39.0",
+    "zod": "^3.25.76"
+  },
   "devDependencies": {
     "@types/node": "^20.17.19",
     "typescript": "^5.7.3",

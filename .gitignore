@@ -12,3 +12,7 @@ fixtures/videos/*
 .agents/skills/*
 !.agents/skills/.gitkeep
 *.log
+
+# Local Netlify folder
+.netlify
+.pnpm-store/

@@ -1,24 +1,62 @@
-# GINSE
+# GINSE — Video to Codex Skill
 
-GINSE transforme une démonstration vidéo en skill Codex, puis Codex peut utiliser ce skill pour reproduire la procédure dans le CRM local de démonstration.
+GINSE transforme une démonstration vidéo commentée en skill Codex téléchargeable.
 
-## Démarrage
+## Tester comme le jury
 
-```powershell
-corepack pnpm install
-Copy-Item .env.example .env
-corepack pnpm build
-corepack pnpm dev
+Ouvrir : **https://mimex-demo-crm.netlify.app**
+
+1. Déposer une vidéo WebM ou MP4 avec narration audio.
+2. La vidéo doit durer 90 secondes maximum et peser moins de 50 Mo.
+3. Ajouter éventuellement l'objectif, le nom de l'application et son URL.
+4. Cliquer sur **Compiler en skill Codex**.
+5. Télécharger le ZIP retourné.
+6. Décompresser son dossier sous `<workspace>/.agents/skills/`.
+7. Dans Codex, invoquer le skill avec `$nom-du-skill`.
+
+Le navigateur extrait localement des images et une piste audio compressée. La Function Netlify transcrit la narration, analyse les images, valide la structure et renvoie :
+
+```text
+<skill-name>/
+├── SKILL.md
+├── agents/
+│   └── openai.yaml
+└── references/
+    └── evidence.json
 ```
 
-Renseigner `OPENAI_API_KEY` dans l’environnement avant une compilation réelle. Le CRM est disponible sur `http://localhost:3000`.
+## Développement local
 
-Déposer une vidéo dans `fixtures/videos/`, puis demander à Codex d’appeler l’outil MCP `create_skill_from_video`. Pour tester sans appel OpenAI, définir `GINSE_MOCK=1`.
+Prérequis : Node.js, pnpm et une clé OpenAI.
 
-## Commande locale
-
-```powershell
-corepack pnpm ginse:compile -- --video fixtures/videos/create-customer.mp4 --goal "Créer une fiche client" --url http://localhost:3000
+```sh
+pnpm install --frozen-lockfile
+cp .env.example .env
+pnpm build
+npx netlify dev
 ```
 
-Les skills sont installés dans `.agents/skills/<nom>/SKILL.md`.
+Configurer `OPENAI_API_KEY` dans `.env` pour le développement. En production, la définir comme secret Netlify limité aux Functions. Ne jamais l'ajouter au dépôt ou au frontend.
+
+## Pipeline
+
+```text
+Vidéo dans le navigateur
+  → 12 images JPEG + narration WAV 8 kHz
+  → POST /api/compile
+  → transcription horodatée
+  → analyse multimodale structurée
+  → lint de sécurité et de complétude
+  → ZIP de skill Codex
+```
+
+La vidéo brute ne quitte pas le navigateur. Les données préparées ne sont pas stockées par l'application.
+
+## Développement du compilateur local historique
+
+Le serveur MCP et la CLI restent disponibles :
+
+```sh
+pnpm dev:mcp
+pnpm ginse:compile -- --video fixtures/videos/demo.webm --goal "Décrire le workflow"
+```
