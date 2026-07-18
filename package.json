@@ -1,0 +1,20 @@
+{
+  "name": "ginse",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.13.1",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm --filter @ginse/demo-crm dev",
+    "dev:mcp": "pnpm --filter @ginse/mcp dev",
+    "ginse:compile": "pnpm --filter @ginse/mcp compile",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.19",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}

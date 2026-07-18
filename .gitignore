@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+.env
+.env.local
+.ginse-tmp/
+.ginse-debug/
+fixtures/videos/*
+!fixtures/videos/.gitkeep
+.agents/skills/*
+!.agents/skills/.gitkeep
+*.log

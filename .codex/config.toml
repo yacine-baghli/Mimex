@@ -1,0 +1,7 @@
+[mcp_servers.ginse]
+command = "node"
+args = ["packages/ginse-mcp/dist/index.js"]
+env_vars = ["OPENAI_API_KEY", "GINSE_VISION_MODEL", "GINSE_TRANSCRIBE_MODEL", "GINSE_FFMPEG_PATH", "GINSE_FFPROBE_PATH", "GINSE_KEEP_ARTIFACTS", "GINSE_MOCK"]
+startup_timeout_sec = 15
+tool_timeout_sec = 300
+enabled = true
