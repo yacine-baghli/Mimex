@@ -1,0 +1,116 @@
+{
+  "schema_version": "2",
+  "slug": "mimex2",
+  "display_name": "Mimex2 — Mimex",
+  "description": "Turn a narrated software workflow into an installable Codex skill package.",
+  "presentation": {
+    "action": "Compile Codex skill",
+    "input": {
+      "label": "Workflow transcript",
+      "icon": "video"
+    },
+    "output": {
+      "label": "Codex skill package",
+      "icon": "code"
+    }
+  },
+  "price": {
+    "amount_cents": 100,
+    "currency": "EUR"
+  },
+  "run_url": "https://mimex-demo-crm.netlify.app/run",
+  "input_schema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "required": [
+      "workflow",
+      "goal",
+      "app_name"
+    ],
+    "properties": {
+      "workflow": {
+        "type": "string",
+        "minLength": 20,
+        "maxLength": 12000,
+        "description": "Narrated workflow transcript or a precise ordered description of the demonstrated actions."
+      },
+      "goal": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 300,
+        "description": "Outcome the generated Codex skill must achieve."
+      },
+      "app_name": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 100,
+        "description": "Name of the application used in the workflow."
+      },
+      "start_url": {
+        "type": "string",
+        "format": "uri",
+        "maxLength": 500,
+        "description": "Optional HTTPS page where Codex should start the workflow."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "required": [
+      "status",
+      "skill_name",
+      "steps_count",
+      "files"
+    ],
+    "properties": {
+      "status": {
+        "const": "ready"
+      },
+      "skill_name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 63
+      },
+      "steps_count": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 30
+      },
+      "files": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "skill_md",
+          "openai_yaml",
+          "evidence_json"
+        ],
+        "properties": {
+          "skill_md": {
+            "type": "string",
+            "minLength": 50
+          },
+          "openai_yaml": {
+            "type": "string",
+            "minLength": 20
+          },
+          "evidence_json": {
+            "type": "string",
+            "minLength": 20
+          }
+        }
+      }
+    }
+  },
+  "example": {
+    "input": {
+      "workflow": "Open the Settings page. Select Appearance in the navigation. Choose Dark mode. Save the changes and confirm that the interface uses the dark theme.",
+      "goal": "Enable dark mode",
+      "app_name": "Example Workspace",
+      "start_url": "https://example.com/settings"
+    }
+  },
+  "ownership_token": "ginse_verify_ec024dcfb237462bb703d1b0f9bafa72"
+}

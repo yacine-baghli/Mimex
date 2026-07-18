@@ -1,0 +1,6 @@
+{
+  "workflow": "Open the Settings page. Select Appearance in the navigation. Choose Dark mode. Save the changes and confirm that the interface uses the dark theme.",
+  "goal": "Enable dark mode",
+  "app_name": "Example Workspace",
+  "start_url": "https://example.com/settings"
+}

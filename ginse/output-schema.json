@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "skill_name", "steps_count", "files"],
+  "properties": {
+    "status": {
+      "const": "ready"
+    },
+    "skill_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 63
+    },
+    "steps_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 30
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["skill_md", "openai_yaml", "evidence_json"],
+      "properties": {
+        "skill_md": { "type": "string", "minLength": 50 },
+        "openai_yaml": { "type": "string", "minLength": 20 },
+        "evidence_json": { "type": "string", "minLength": 20 }
+      }
+    }
+  }
+}
