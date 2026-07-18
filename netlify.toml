@@ -6,6 +6,9 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+[functions.video-worker-background]
+  included_files = ["node_modules/@ffmpeg-installer/linux-x64/ffmpeg"]
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

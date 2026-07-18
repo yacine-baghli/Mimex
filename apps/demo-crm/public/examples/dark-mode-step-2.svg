@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#111827"/>
+  <rect x="90" y="70" width="1100" height="580" rx="28" fill="#f8fafc"/>
+  <rect x="90" y="70" width="310" height="580" rx="28" fill="#e2e8f0"/>
+  <text x="145" y="155" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#0f172a">Settings</text>
+  <text x="145" y="240" font-family="Arial, sans-serif" font-size="25" fill="#475569">Account</text>
+  <rect x="120" y="270" width="250" height="62" rx="14" fill="#c7d2fe"/>
+  <text x="145" y="311" font-family="Arial, sans-serif" font-size="25" font-weight="700" fill="#3730a3">Appearance</text>
+  <text x="470" y="180" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#0f172a">Appearance</text>
+  <text x="470" y="250" font-family="Arial, sans-serif" font-size="25" fill="#475569">Choose Light, Dark, or System theme.</text>
+  <rect x="470" y="310" width="580" height="80" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+  <text x="510" y="362" font-family="Arial, sans-serif" font-size="27" fill="#0f172a">Dark mode</text>
+</svg>

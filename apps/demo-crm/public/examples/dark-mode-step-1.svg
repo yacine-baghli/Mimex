@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#111827"/>
+  <rect x="90" y="70" width="1100" height="580" rx="28" fill="#f8fafc"/>
+  <text x="150" y="160" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#0f172a">Workspace</text>
+  <text x="150" y="235" font-family="Arial, sans-serif" font-size="26" fill="#475569">Dashboard</text>
+  <rect x="130" y="275" width="1020" height="90" rx="18" fill="#eef2ff"/>
+  <text x="175" y="332" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#3730a3">⚙ Settings</text>
+  <text x="150" y="440" font-family="Arial, sans-serif" font-size="25" fill="#64748b">Open Settings to configure the workspace.</text>
+</svg>

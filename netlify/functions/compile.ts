@@ -1,5 +1,6 @@
 import OpenAI, { toFile } from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
+import { GoogleGenAI } from "@google/genai";
 import { GeneratedSkillSpecSchema, type GeneratedSkillSpec } from "../../packages/skill-compiler/dist/schema.js";
 import { lintSkillSpec } from "../../packages/skill-compiler/dist/lint.js";
 import {
@@ -93,6 +94,19 @@ function validateRequest(value: unknown): CompileRequest {
 }
 
 async function transcribe(client: OpenAI, audioWavBase64: string): Promise<TranscriptSegment[]> {
+  if (process.env.OPENAI_BASE_URL) {
+    const gemini = new GoogleGenAI({});
+    const response = await gemini.models.generateContent({
+      model: process.env.GINSE_AUDIO_MODEL || "gemini-2.5-flash",
+      contents: [
+        { text: "Transcribe this workflow narration faithfully. Return only the transcript, with no commentary." },
+        { inlineData: { mimeType: "audio/wav", data: audioWavBase64 } },
+      ],
+    });
+    const text = response.text?.trim() ?? "";
+    return text ? [{ startMs: 0, endMs: 0, text }] : [];
+  }
+
   const audioBytes = Buffer.from(audioWavBase64, "base64");
   const file = await toFile(audioBytes, "narration.wav", { type: "audio/wav" });
   const response = await client.audio.transcriptions.create({
@@ -194,7 +208,7 @@ export default async (request: Request) => {
     const input = validateRequest(await request.json());
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      baseURL: "https://api.openai.com/v1",
+      baseURL: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
       maxRetries: 0,
       timeout: 45_000,
     });
