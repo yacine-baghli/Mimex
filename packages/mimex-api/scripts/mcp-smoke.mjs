@@ -6,12 +6,12 @@ const transport = new StdioClientTransport({
   args: ["dist/index.js"],
   env: {
     ...process.env,
-    GINSE_MOCK: "1",
+    MIMEX_MOCK: "1",
   },
   stderr: "pipe",
 });
 
-const client = new Client({ name: "ginse-smoke", version: "0.1.0" });
+const client = new Client({ name: "mimex-smoke", version: "0.1.0" });
 
 try {
   await client.connect(transport);

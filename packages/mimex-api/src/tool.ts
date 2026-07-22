@@ -1,5 +1,5 @@
 import { relative, resolve } from "node:path";
-import { compileSkillFromVideo, type SkillTarget } from "@ginse/skill-compiler";
+import { compileSkillFromVideo, type SkillTarget } from "@mimex/skill-compiler";
 import { resolveSkillOutputDirectory, resolveWorkspaceVideoPath } from "./paths.js";
 
 export type CreateSkillInput = {
@@ -28,7 +28,7 @@ export type CreateSkillOutput = {
 
 export async function createSkillFromVideo(
   input: CreateSkillInput,
-  workspaceRoot = process.env.GINSE_WORKSPACE_ROOT ?? process.cwd(),
+  workspaceRoot = process.env.MIMEX_WORKSPACE_ROOT ?? process.cwd(),
 ): Promise<CreateSkillOutput> {
   try {
     const canonicalWorkspace = resolve(workspaceRoot);

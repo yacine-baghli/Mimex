@@ -22,7 +22,7 @@ describe("skill renderer", () => {
   it("produces a valid Codex frontmatter with generalized inputs", () => {
     const spec = createMockSkillSpec("Créer une fiche client", {
       kind: "browser",
-      appName: "GINSE Demo CRM",
+      appName: "Mimex Demo CRM",
       startUrl: "http://localhost:3000",
     });
 
@@ -38,11 +38,11 @@ describe("skill renderer", () => {
   });
 
   it("installs without overwriting an existing skill", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ginse-skill-test-"));
+    const root = await mkdtemp(join(tmpdir(), "mimex-skill-test-"));
     temporaryDirectories.push(root);
     const spec = createMockSkillSpec("Créer une fiche client", {
       kind: "browser",
-      appName: "GINSE Demo CRM",
+      appName: "Mimex Demo CRM",
       startUrl: "http://localhost:3000",
     });
     const evidence = createEvidenceManifest(spec, "demo.mp4", 8000, []);
@@ -60,7 +60,7 @@ describe("skill lint", () => {
   it("accepts a complete replayable skill", () => {
     const spec = createMockSkillSpec("Créer une fiche client", {
       kind: "browser",
-      appName: "GINSE Demo CRM",
+      appName: "Mimex Demo CRM",
       startUrl: "http://localhost:3000",
     });
     expect(lintSkillSpec(spec)).toMatchObject({ errors: [], readyToReplay: true });
@@ -69,7 +69,7 @@ describe("skill lint", () => {
   it("blocks a skill with open questions", () => {
     const spec = createMockSkillSpec("Créer une fiche client", {
       kind: "browser",
-      appName: "GINSE Demo CRM",
+      appName: "Mimex Demo CRM",
       startUrl: "http://localhost:3000",
     });
     spec.openQuestions = ["Quel champ correspond à la priorité ?"];
@@ -79,7 +79,7 @@ describe("skill lint", () => {
   it("does not block when unseen dropdown options are the only uncertainty", () => {
     const spec = createMockSkillSpec("Créer une fiche client", {
       kind: "browser",
-      appName: "GINSE Demo CRM",
+      appName: "Mimex Demo CRM",
       startUrl: "http://localhost:3000",
     });
     spec.readyToReplay = false;

@@ -123,8 +123,8 @@ export async function prepareVideo(options: PrepareVideoOptions): Promise<Prepar
     throw new VideoPipelineError("La vidéo dépasse la limite de 200 Mo.");
   }
 
-  const ffmpegPath = options.ffmpegPath ?? process.env.GINSE_FFMPEG_PATH ?? "ffmpeg";
-  const ffprobePath = options.ffprobePath ?? process.env.GINSE_FFPROBE_PATH ?? "ffprobe";
+  const ffmpegPath = options.ffmpegPath ?? process.env.MIMEX_FFMPEG_PATH ?? "ffmpeg";
+  const ffprobePath = options.ffprobePath ?? process.env.MIMEX_FFPROBE_PATH ?? "ffprobe";
   const intervalSeconds = options.intervalSeconds ?? 2;
   const maxFrames = options.maxFrames ?? 30;
   const probe = await probeVideo(sourcePath, ffprobePath);
@@ -142,10 +142,10 @@ export async function prepareVideo(options: PrepareVideoOptions): Promise<Prepar
     throw new VideoPipelineError("Le fichier ne contient aucune piste vidéo.");
   }
 
-  const workingDirectory = await mkdtemp(join(tmpdir(), "ginse-video-"));
+  const workingDirectory = await mkdtemp(join(tmpdir(), "mimex-video-"));
   const framePattern = join(workingDirectory, "frame-%04d.jpg");
   const audioPath = join(workingDirectory, "audio.mp3");
-  const keepArtifacts = options.keepArtifacts ?? process.env.GINSE_KEEP_ARTIFACTS === "1";
+  const keepArtifacts = options.keepArtifacts ?? process.env.MIMEX_KEEP_ARTIFACTS === "1";
 
   const cleanup = async () => {
     if (!keepArtifacts) {

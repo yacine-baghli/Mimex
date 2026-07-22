@@ -7,11 +7,11 @@ import { fileURLToPath } from "node:url";
 import multipart from "@fastify/multipart";
 import { config as loadEnv } from "dotenv";
 import Fastify, { type FastifyRequest } from "fastify";
-import { proposeGoalFromVideo } from "@ginse/skill-compiler";
+import { proposeGoalFromVideo } from "@mimex/skill-compiler";
 import { createSkillFromVideo } from "./tool.js";
 
 const workspaceRoot = resolve(
-  process.env.GINSE_WORKSPACE_ROOT ?? fileURLToPath(new URL("../../..", import.meta.url)),
+  process.env.MIMEX_WORKSPACE_ROOT ?? fileURLToPath(new URL("../../..", import.meta.url)),
 );
 loadEnv({ path: resolve(workspaceRoot, ".env") });
 
@@ -45,7 +45,7 @@ type VideoUpload = {
 };
 
 async function receiveVideoUpload(request: FastifyRequest): Promise<VideoUpload> {
-  const uploadDirectory = resolve(workspaceRoot, ".ginse-tmp", "uploads");
+  const uploadDirectory = resolve(workspaceRoot, ".mimex-tmp", "uploads");
   await mkdir(uploadDirectory, { recursive: true });
   const fields: ApiFields = {};
   let uploadPath: string | null = null;
@@ -117,7 +117,7 @@ export function buildHttpServer() {
     let upload: VideoUpload | null = null;
     try {
       upload = await receiveVideoUpload(request);
-      if (!process.env.OPENAI_API_KEY && process.env.GINSE_MOCK !== "1") {
+      if (!process.env.OPENAI_API_KEY && process.env.MIMEX_MOCK !== "1") {
         return reply.code(503).send({ error: "OPENAI_API_KEY manque dans le fichier .env du serveur." });
       }
 
@@ -153,7 +153,7 @@ export function buildHttpServer() {
       if (!upload.fields.goal || upload.fields.goal.length < 5) {
         return reply.code(400).send({ error: "Décris précisément l’objectif de la démonstration." });
       }
-      if (!process.env.OPENAI_API_KEY && process.env.GINSE_MOCK !== "1") {
+      if (!process.env.OPENAI_API_KEY && process.env.MIMEX_MOCK !== "1") {
         return reply.code(503).send({
           error: "OPENAI_API_KEY manque dans le fichier .env du serveur.",
         });
@@ -165,7 +165,7 @@ export function buildHttpServer() {
           goal: upload.fields.goal,
           target: {
             kind: "browser",
-            app_name: upload.fields.app_name || "GINSE Demo CRM",
+            app_name: upload.fields.app_name || "Mimex Demo CRM",
             start_url: upload.fields.start_url || "http://localhost:3000",
           },
         },
@@ -204,8 +204,8 @@ export function buildHttpServer() {
   return server;
 }
 
-const port = Number.parseInt(process.env.GINSE_API_PORT ?? "8787", 10);
-const host = process.env.GINSE_API_HOST ?? "127.0.0.1";
+const port = Number.parseInt(process.env.MIMEX_API_PORT ?? "8787", 10);
+const host = process.env.MIMEX_API_HOST ?? "127.0.0.1";
 const server = buildHttpServer();
 
 try {

@@ -22,7 +22,7 @@ export function slugifySkillName(value: string): string {
     .slice(0, 63)
     .replace(/-+$/u, "");
 
-  return normalized || "ginse-skill";
+  return normalized || "mimex-skill";
 }
 
 export function renderSkillMarkdown(spec: GeneratedSkillSpec, skillName: string): string {

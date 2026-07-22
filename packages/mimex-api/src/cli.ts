@@ -11,12 +11,12 @@ function readArgument(name: string): string | undefined {
 const videoPath = readArgument("--video");
 const goal = readArgument("--goal");
 const startUrl = readArgument("--url") ?? "http://localhost:3000";
-const appName = readArgument("--app") ?? "GINSE Demo CRM";
-const workspaceRoot = process.env.GINSE_WORKSPACE_ROOT ?? fileURLToPath(new URL("../../..", import.meta.url));
+const appName = readArgument("--app") ?? "Mimex Demo CRM";
+const workspaceRoot = process.env.MIMEX_WORKSPACE_ROOT ?? fileURLToPath(new URL("../../..", import.meta.url));
 
 if (!videoPath || !goal) {
   console.error(
-    "Usage: pnpm ginse:compile -- --video <fichier> --goal <objectif> [--url <url>] [--app <nom>]",
+    "Usage: pnpm mimex:compile -- --video <fichier> --goal <objectif> [--url <url>] [--app <nom>]",
   );
   process.exit(2);
 }

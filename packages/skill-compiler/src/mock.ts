@@ -4,7 +4,7 @@ export function createMockSkillSpec(goal: string, target: SkillTarget): Generate
   return {
     name: "create-customer",
     description:
-      "Créer une fiche client dans GINSE Demo CRM. Utiliser ce skill lorsqu'un utilisateur demande d'ajouter un client avec un nom, une entreprise et une priorité.",
+      "Créer une fiche client dans Mimex Demo CRM. Utiliser ce skill lorsqu'un utilisateur demande d'ajouter un client avec un nom, une entreprise et une priorité.",
     goal,
     target,
     inputs: [

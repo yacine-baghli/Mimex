@@ -1,5 +1,5 @@
 {
-  "name": "@ginse/skill-compiler",
+  "name": "@mimex/skill-compiler",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ginse/video-pipeline": "workspace:*",
+    "@mimex/video-pipeline": "workspace:*",
     "openai": "^6.39.0",
     "zod": "^3.25.76"
   }

@@ -51,7 +51,7 @@ export async function resolveSkillOutputDirectory(
 
   const allowedRoot = resolve(canonicalRoot, ".agents", "skills");
   if (!isWithin(allowedRoot, candidate)) {
-    throw new PathPolicyError("GINSE peut uniquement écrire sous .agents/skills.");
+    throw new PathPolicyError("Mimex peut uniquement écrire sous .agents/skills.");
   }
 
   return candidate;

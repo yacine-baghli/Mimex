@@ -1,6 +1,6 @@
 import { basename, resolve } from "node:path";
 import OpenAI from "openai";
-import { prepareVideo } from "@ginse/video-pipeline";
+import { prepareVideo } from "@mimex/video-pipeline";
 import { createEvidenceManifest } from "./render.js";
 import { lintSkillSpec, type SkillLintResult } from "./lint.js";
 import { createMockSkillSpec } from "./mock.js";
@@ -43,11 +43,11 @@ export type ProposeGoalResult = {
 export async function proposeGoalFromVideo(videoPath: string): Promise<ProposeGoalResult> {
   const prepared = await prepareVideo({
     videoPath: resolve(videoPath),
-    keepArtifacts: process.env.GINSE_KEEP_ARTIFACTS === "1",
+    keepArtifacts: process.env.MIMEX_KEEP_ARTIFACTS === "1",
   });
 
   try {
-    const useMock = process.env.GINSE_MOCK === "1";
+    const useMock = process.env.MIMEX_MOCK === "1";
     const client = useMock ? null : new OpenAI();
     const transcript = client ? await transcribeVideoAudio(client, prepared.audioPath) : [];
     const proposal = client
@@ -81,11 +81,11 @@ export async function compileSkillFromVideo(
   const target = SkillTargetSchema.parse(options.target);
   const prepared = await prepareVideo({
     videoPath: resolve(options.videoPath),
-    keepArtifacts: process.env.GINSE_KEEP_ARTIFACTS === "1",
+    keepArtifacts: process.env.MIMEX_KEEP_ARTIFACTS === "1",
   });
 
   try {
-    const useMock = options.mock ?? process.env.GINSE_MOCK === "1";
+    const useMock = options.mock ?? process.env.MIMEX_MOCK === "1";
     const client = useMock ? null : new OpenAI();
     const transcript = client ? await transcribeVideoAudio(client, prepared.audioPath) : [];
     const spec = client

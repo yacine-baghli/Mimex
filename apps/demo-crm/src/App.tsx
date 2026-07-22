@@ -1,7 +1,11 @@
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Compose } from "./Compose";
+import { Library } from "./Library";
+import { Recorder } from "./Recorder";
+import { approveGoal, uploadVideo, usesNetlifyBackend, waitForRun, type MimexRun } from "./mimex-api";
 
 type Priority = "Basse" | "Normale" | "Haute";
-type View = "customers" | "skills";
+type View = "customers" | "skills" | "library" | "compose";
 type GenerationPhase = "idle" | "analyzing_goal" | "awaiting_validation" | "generating" | "done" | "error";
 
 type Customer = {
@@ -43,7 +47,7 @@ const seedCustomers: Customer[] = [
   { id: "seed-2", name: "Alan Turing", company: "Bletchley Systems", priority: "Normale", createdAt: "17 juil. 2026" },
 ];
 
-const storageKey = "ginse-demo-customers-v1";
+const storageKey = "mimex-demo-customers-v1";
 const maxVideoBytes = 200 * 1024 * 1024;
 const acceptedExtensions = ["mp4", "mov", "webm"];
 
@@ -61,13 +65,25 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
 }
 
+function runToLegacyResult(run: MimexRun): SkillApiResponse {
+  return {
+    status: run.status === "succeeded" ? "ready" : "failed",
+    skill_name: run.output?.skillName ?? null,
+    ...(run.output ? { confidence: run.output.confidence } : {}),
+    ready_to_replay: run.status === "succeeded",
+    skill_markdown: run.output?.skillMarkdown ?? null,
+    evidence: { steps: Array.from({ length: run.output?.stepsCount ?? 0 }) },
+    ...(run.error ? { error: run.error } : {}),
+  };
+}
+
 async function readApiPayload<T extends { error?: string }>(response: Response): Promise<T> {
   const body = await response.text();
   try {
     return JSON.parse(body) as T;
   } catch {
     throw new Error(
-      `Réponse API invalide (HTTP ${response.status}). Vérifie que le serveur GINSE fonctionne sur le port 8787, puis recharge la page.`,
+      `Réponse API invalide (HTTP ${response.status}). Vérifie que le serveur Mimex fonctionne, puis recharge la page.`,
     );
   }
 }
@@ -86,6 +102,9 @@ export function App() {
   const [approvedGoal, setApprovedGoal] = useState("");
   const [codexPrompt, setCodexPrompt] = useState<string | null>(null);
   const [codexCopyState, setCodexCopyState] = useState<"idle" | "copied" | "manual">("idle");
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [libraryRefreshKey, setLibraryRefreshKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const videoUrl = useMemo(() => (video ? URL.createObjectURL(video) : null), [video]);
@@ -136,6 +155,8 @@ export function App() {
     setApprovedGoal("");
     setCodexPrompt(null);
     setCodexCopyState("idle");
+    setActiveRunId(null);
+    setUploadProgress(0);
     setPhase("idle");
     if (!file) return;
 
@@ -173,6 +194,25 @@ export function App() {
     setCodexCopyState("idle");
 
     try {
+      if (await usesNetlifyBackend()) {
+        const runId = await uploadVideo(video, setUploadProgress);
+        setActiveRunId(runId);
+        const run = await waitForRun(runId, ["awaiting_goal"]);
+        if (!run.proposal) throw new Error("OpenAI n'a retourné aucun objectif exploitable.");
+        const proposal: GoalProposal = {
+          status: "proposal_ready",
+          proposed_goal: run.proposal.goal,
+          summary: run.proposal.summary,
+          observed_actions: run.proposal.observedActions,
+          uncertainties: run.proposal.uncertainties,
+          confidence: run.proposal.confidence,
+        };
+        setGoalProposal(proposal);
+        setApprovedGoal(run.proposal.goal);
+        setPhase("awaiting_validation");
+        formElement.querySelector<HTMLTextAreaElement>('textarea[name="goal"]')?.focus();
+        return;
+      }
       const response = await fetch("/api/objectives", { method: "POST", body: form });
       const payload = await readApiPayload<GoalProposal>(response);
       if (!response.ok || payload.error || !payload.proposed_goal) {
@@ -205,6 +245,17 @@ export function App() {
     setResult(null);
 
     try {
+      if (activeRunId) {
+        const appName = String(form.get("app_name") ?? "Mimex Demo CRM");
+        const startUrl = String(form.get("start_url") ?? window.location.origin);
+        await approveGoal(activeRunId, goal, appName, startUrl);
+        const run = await waitForRun(activeRunId, ["succeeded"]);
+        if (!run.output) throw new Error("Le fichier SKILL.md est absent du résultat.");
+        setResult(runToLegacyResult(run));
+        setLibraryRefreshKey((value) => value + 1);
+        setPhase("done");
+        return;
+      }
       const response = await fetch("/api/skills", { method: "POST", body: form });
       const payload = await readApiPayload<SkillApiResponse>(response);
       if (!response.ok || payload.error || payload.status === "failed") {
@@ -241,7 +292,7 @@ export function App() {
 
   async function useWithCodex() {
     if (!result?.skill_name) return;
-    const prompt = `Utilise $${result.skill_name}. Commence par me demander les entrées obligatoires, puis reproduis la procédure dans le CRM ouvert sur http://localhost:3000 et confirme visuellement le résultat.`;
+    const prompt = `Installe le fichier SKILL.md téléchargé depuis Mimex comme skill $${result.skill_name}. Commence par me demander les entrées obligatoires, puis reproduis la procédure dans l'application cible et confirme visuellement le résultat.`;
     setCodexPrompt(prompt);
     try {
       await navigator.clipboard.writeText(prompt);
@@ -254,13 +305,19 @@ export function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand" aria-label="GINSE CRM"><span className="brand-mark">G</span><span>GINSE</span></div>
+        <div className="brand" aria-label="Mimex"><span className="brand-mark">M</span><span>MIMEX</span></div>
         <nav aria-label="Navigation principale">
           <button className={`nav-item ${view === "customers" ? "active" : ""}`} type="button" onClick={() => setView("customers")}>
             <span aria-hidden="true">◎</span> CRM de démonstration
           </button>
           <button className={`nav-item ${view === "skills" ? "active" : ""}`} type="button" onClick={() => setView("skills")}>
             <span aria-hidden="true">✦</span> Générer un skill
+          </button>
+          <button className={`nav-item ${view === "library" ? "active" : ""}`} type="button" onClick={() => setView("library")}>
+            <span aria-hidden="true">▦</span> Bibliothèque
+          </button>
+          <button className={`nav-item ${view === "compose" ? "active" : ""}`} type="button" onClick={() => setView("compose")}>
+            <span aria-hidden="true">⎇</span> Composer des skills
           </button>
         </nav>
         <div className="demo-card">
@@ -290,10 +347,10 @@ export function App() {
               </tbody></table></div>
             </section>
           </>
-        ) : (
+        ) : view === "skills" ? (
           <>
             <header className="topbar skill-topbar">
-              <div><p className="breadcrumb">Studio GINSE / Video to Skill</p><h1>Créer un skill depuis une vidéo</h1><p className="page-intro">Dépose une démonstration. GINSE en extrait les étapes, les entrées variables et les critères de réussite.</p></div>
+              <div><p className="breadcrumb">Studio Mimex / Video to Skill</p><h1>Créer un skill depuis une vidéo</h1><p className="page-intro">Dépose ou filme une démonstration. Mimex en extrait les étapes, les entrées variables et les critères de réussite.</p></div>
               <span className="api-badge"><i /> OpenAI sécurisé côté serveur</span>
             </header>
 
@@ -304,6 +361,7 @@ export function App() {
                   <input ref={fileInputRef} type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" onChange={onFileChange} hidden />
                   {video ? <><span className="file-icon">▶</span><strong>{video.name}</strong><small>{formatBytes(video.size)}</small><button className="replace-file" type="button">Remplacer</button></> : <><span className="upload-icon">↑</span><strong>Dépose ta vidéo ici</strong><small>ou clique pour parcourir tes fichiers</small></>}
                 </div>
+                <Recorder onVideo={(file) => selectVideo(file)} />
                 {videoError ? <p className="field-error" role="alert">{videoError}</p> : null}
                 {videoUrl ? <video className="video-preview" src={videoUrl} controls preload="metadata" /> : null}
 
@@ -318,11 +376,12 @@ export function App() {
                     <button className="text-action" type="button" onClick={() => { setGoalProposal(null); setApprovedGoal(""); setPhase("idle"); setGenerationError(null); }}>Relancer l’analyse de l’objectif</button>
                   </div>
                 ) : <div className="goal-placeholder"><span>✦</span><p>L’objectif sera rempli automatiquement après l’analyse visuelle de la vidéo.</p></div>}
-                <div className="form-grid"><label>Application<input name="app_name" defaultValue="GINSE Demo CRM" required /></label><label>URL de départ<input name="start_url" type="url" defaultValue="http://localhost:3000" required /></label></div>
+                <div className="form-grid"><label>Application<input name="app_name" defaultValue="Mimex Demo CRM" required /></label><label>URL de départ<input name="start_url" type="url" defaultValue={window.location.origin} required /></label></div>
                 <button className="primary-button generate-button" type="submit" disabled={phase === "analyzing_goal" || phase === "generating"}>
                   {phase === "analyzing_goal" ? <><span className="spinner" /> OpenAI analyse la vidéo…</> : phase === "generating" ? <><span className="spinner" /> Génération du skill…</> : goalProposal ? <>✓ Valider l’objectif et générer le skill</> : <>✦ Analyser la vidéo et proposer un objectif</>}
                 </button>
-                <p className="privacy-note">La vidéo temporaire est supprimée du serveur à la fin de l’analyse.</p>
+                {phase === "analyzing_goal" && uploadProgress > 0 && uploadProgress < 100 ? <p className="privacy-note">Upload Netlify : {uploadProgress}%</p> : null}
+                <p className="privacy-note">Les fragments vidéo sont supprimés après la génération. Le skill reste dans Netlify Blobs.</p>
               </form>
 
               <aside className="analysis-panel panel">
@@ -333,7 +392,7 @@ export function App() {
                   <li className={phase === "awaiting_validation" || phase === "generating" || phase === "done" ? "active" : ""}><span>3</span><div><strong>Validation humaine</strong><small>Confirmation ou correction de l’objectif</small></div></li>
                   <li className={phase === "generating" || phase === "done" ? "active" : ""}><span>4</span><div><strong>Compiler le skill</strong><small>Étapes, paramètres, sécurité et preuves</small></div></li>
                 </ol>
-                {generationError ? <div className="result-message error-message"><strong>Traitement interrompu</strong><p>{generationError}</p><small>Vérifie que les terminaux API et CRM sont ouverts, puis réessaie.</small></div> : null}
+                {generationError ? <div className="result-message error-message"><strong>Traitement interrompu</strong><p>{generationError}</p><small>Vérifie la variable OPENAI_API_KEY et les journaux Netlify Functions, puis réessaie.</small></div> : null}
                 {result ? (
                   <div className={`skill-result ${result.status === "ready" ? "ready" : "warning"}`}>
                     <div className="result-heading"><span>{result.status === "ready" ? "✓" : "!"}</span><div><strong>{result.status === "ready" ? "Skill prêt à être utilisé" : "Vérification nécessaire"}</strong><small>{result.skill_name ?? "Analyse terminée"}</small></div></div>
@@ -347,7 +406,7 @@ export function App() {
                         <button className="primary-button codex-button" type="button" onClick={useWithCodex}>✦ Utiliser avec Codex</button>
                       </div>
                       {codexPrompt ? <div className="codex-handoff" aria-live="polite">
-                        <div><strong>{codexCopyState === "copied" ? "Instruction copiée" : "Instruction prête pour Codex"}</strong><span>Le skill est déjà installé dans ce workspace.</span></div>
+                        <div><strong>{codexCopyState === "copied" ? "Instruction copiée" : "Instruction prête pour Codex"}</strong><span>Télécharge aussi le SKILL.md pour le joindre à Codex.</span></div>
                         <code>{codexPrompt}</code>
                         <small>{codexCopyState === "copied" ? "Colle maintenant cette instruction dans Codex." : "Copie cette instruction et colle-la dans Codex."}</small>
                       </div> : null}
@@ -357,7 +416,7 @@ export function App() {
               </aside>
             </section>
           </>
-        )}
+        ) : view === "library" ? <Library refreshKey={libraryRefreshKey} /> : <Compose />}
       </main>
 
       {isFormOpen ? <div className="modal-backdrop" role="presentation" onMouseDown={() => setIsFormOpen(false)}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="new-customer-title" onMouseDown={(event) => event.stopPropagation()}><div className="modal-heading"><div><span className="eyebrow">NOUVELLE FICHE</span><h2 id="new-customer-title">Créer un client</h2><p>Renseignez les informations nécessaires au suivi.</p></div><button className="icon-button" type="button" aria-label="Fermer" onClick={() => setIsFormOpen(false)}>×</button></div><form onSubmit={createCustomer}><label>Nom complet<input name="customer_name" type="text" required autoFocus placeholder="ex. Ada Lovelace" /></label><label>Entreprise<input name="company_name" type="text" required placeholder="ex. Analytical Engines" /></label><label>Priorité<select name="priority" defaultValue="Normale" required><option>Basse</option><option>Normale</option><option>Haute</option></select></label><div className="form-actions"><button className="secondary-button" type="button" onClick={() => setIsFormOpen(false)}>Annuler</button><button className="primary-button" type="submit">Enregistrer</button></div></form></section></div> : null}

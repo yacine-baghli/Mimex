@@ -6,7 +6,7 @@ import { z } from "zod";
 import { createSkillFromVideo } from "./tool.js";
 
 const server = new McpServer({
-  name: "ginse",
+  name: "mimex",
   version: "0.1.0",
 });
 
@@ -69,7 +69,7 @@ server.registerTool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("GINSE MCP server running on stdio");
+  console.error("Mimex MCP server running on stdio");
 }
 
 process.on("SIGINT", () => {
@@ -77,6 +77,6 @@ process.on("SIGINT", () => {
 });
 
 main().catch((error) => {
-  console.error("GINSE MCP fatal error:", error);
+  console.error("Mimex MCP fatal error:", error);
   process.exit(1);
 });

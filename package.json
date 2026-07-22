@@ -1,22 +1,32 @@
 {
-  "name": "ginse",
+  "name": "mimex",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.13.1",
   "scripts": {
     "build": "pnpm -r build",
-    "dev": "pnpm --parallel --filter @ginse/demo-crm --filter @ginse/mcp dev",
-    "dev:crm": "pnpm --filter @ginse/demo-crm dev",
-    "dev:mcp": "pnpm --filter @ginse/mcp dev:mcp",
-    "dev:api": "pnpm --filter @ginse/mcp dev",
-    "ginse:compile": "pnpm --filter @ginse/mcp compile",
+    "build:netlify": "pnpm --filter @mimex/demo-crm build",
+    "dev": "pnpm --parallel --filter @mimex/demo-crm --filter @mimex/api dev",
+    "dev:crm": "pnpm --filter @mimex/demo-crm dev",
+    "dev:mcp": "pnpm --filter @mimex/api dev:mcp",
+    "dev:api": "pnpm --filter @mimex/api dev",
+    "mimex:compile": "pnpm --filter @mimex/api compile",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
+    "@netlify/blobs": "^10.0.0",
+    "@netlify/functions": "^4.2.5",
     "@types/node": "^20.17.19",
+    "ffmpeg-static": "^5.2.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "ffmpeg-static"
+    ]
   }
 }

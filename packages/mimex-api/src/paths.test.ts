@@ -16,7 +16,7 @@ afterEach(async () => {
 
 describe("workspace path policy", () => {
   it("accepts videos and skill output inside the workspace", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ginse-path-test-"));
+    const root = await mkdtemp(join(tmpdir(), "mimex-path-test-"));
     temporaryDirectories.push(root);
     await mkdir(join(root, "fixtures", "videos"), { recursive: true });
     await writeFile(join(root, "fixtures", "videos", "demo.mp4"), "demo");
@@ -30,7 +30,7 @@ describe("workspace path policy", () => {
   });
 
   it("rejects output outside .agents/skills", async () => {
-    const root = await mkdtemp(join(tmpdir(), "ginse-path-test-"));
+    const root = await mkdtemp(join(tmpdir(), "mimex-path-test-"));
     temporaryDirectories.push(root);
     await expect(resolveSkillOutputDirectory(root, "output")).rejects.toThrow(
       "uniquement écrire sous .agents/skills",

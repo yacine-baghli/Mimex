@@ -187,6 +187,144 @@ h2 {
   font-weight: 700;
 }
 
+.danger-button {
+  min-height: 42px;
+  padding: 0 18px;
+  color: #fff;
+  border: 1px solid #9b342b;
+  border-radius: 10px;
+  background: #b34236;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.recorder-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #e0e6e1;
+  border-radius: 11px;
+  background: #fafcfa;
+}
+
+.recorder-row span,
+.recorder-row small {
+  color: #758178;
+  font-size: 11px;
+}
+
+.recorder-row small {
+  flex-basis: 100%;
+  color: #9b4035;
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.empty-library {
+  grid-column: 1 / -1;
+  padding: 50px;
+  color: #7b877f;
+  text-align: center;
+}
+
+.skill-card {
+  padding: 22px;
+}
+
+.skill-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.skill-card-top small,
+.muted {
+  color: #89958d;
+  font-size: 12px;
+}
+
+.skill-card h2 {
+  margin-top: 18px;
+}
+
+.skill-card > p {
+  min-height: 42px;
+  color: #69766e;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.skill-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-top: 15px;
+  border-top: 1px solid #edf0ec;
+}
+
+.skill-card-actions button {
+  padding: 7px 9px;
+  color: #315a42;
+  border: 1px solid #d6e2d9;
+  border-radius: 7px;
+  background: #f8fbf9;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.skill-card-actions .destructive-link {
+  color: #98463c;
+  border-color: #edd4cf;
+  background: #fff8f7;
+}
+
+.compose-layout {
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 1px;
+  padding: 0;
+  background: #e5e9e6;
+}
+
+.compose-layout > section {
+  display: grid;
+  align-content: start;
+  gap: 15px;
+  padding: 28px;
+  background: #fff;
+}
+
+.compose-list {
+  display: grid;
+  border: 1px solid #e0e5df;
+}
+
+.compose-list button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px;
+  color: #334039;
+  border: 0;
+  border-bottom: 1px solid #e8ece9;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.compose-list button:last-child { border-bottom: 0; }
+.compose-list button.selected { color: #fff; background: #28603f; }
+.compose-list button span { display: grid; width: 25px; height: 25px; place-items: center; border: 1px solid currentColor; border-radius: 7px; font-size: 10px; }
+.composed-result { margin-top: 20px; padding: 24px; }
+.composed-result p { color: #69766e; }
+
 .primary-button {
   color: #f9fffb;
   border: 1px solid #183d2a;
@@ -930,6 +1068,8 @@ form textarea:focus {
   .sidebar { width: 210px; }
   main { padding: 32px 28px 50px; }
   .skill-layout { grid-template-columns: 1fr; }
+  .library-grid,
+  .compose-layout { grid-template-columns: 1fr; }
 }
 
 .form-actions {

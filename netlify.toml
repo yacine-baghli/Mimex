@@ -1,0 +1,29 @@
+[build]
+  command = "corepack pnpm build:netlify"
+  publish = "apps/demo-crm/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_VERSION = "10.13.1"
+
+[functions]
+  directory = "netlify/functions"
+  external_node_modules = ["ffmpeg-static"]
+  node_bundler = "esbuild"
+
+[functions.process-background]
+  included_files = [
+    "node_modules/ffmpeg-static/ffmpeg",
+    "node_modules/ffmpeg-static/ffmpeg.exe"
+  ]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,12 +1,15 @@
 node_modules/
 dist/
 .vite/
+.netlify/
 coverage/
 *.tsbuildinfo
 .env
 .env.local
 .ginse-tmp/
 .ginse-debug/
+.mimex-tmp/
+.mimex-debug/
 fixtures/videos/*
 !fixtures/videos/.gitkeep
 /video_demo.mov
