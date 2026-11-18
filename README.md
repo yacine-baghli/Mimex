@@ -8,6 +8,7 @@ The project was designed and built collectively by the **Mimex team** for the Op
 
 ## Table of contents
 
+- [Quickstart](#quickstart)
 - [Product overview](#product-overview)
 - [Core features](#core-features)
 - [End-to-end workflow](#end-to-end-workflow)
@@ -25,6 +26,18 @@ The project was designed and built collectively by the **Mimex team** for the Op
 - [Current scope and limitations](#current-scope-and-limitations)
 - [Troubleshooting](#troubleshooting)
 - [Team](#team)
+
+## Quickstart
+
+Use the Netlify deployment or [Netlify Dev](#test-the-netlify-runtime-locally) for the shared library, resumable validation, and composition.
+
+1. Open **Générer un skill**. Record a workflow or import an MP4, MOV, or WebM file up to 200 MB.
+2. Start the analysis, then review the proposed objective, observed actions, and uncertainties. Edit the objective if needed before generating the skill.
+3. To resume after closing or reloading the page, open **Bibliothèque**, find the run marked **Objectif à valider**, and select **Valider l’objectif**. Mimex reuses the uploaded recording.
+4. Once the skill is ready, select **Aperçu et copie** to inspect the Markdown. Use **Copier le Markdown** to copy its contents, or download the file and select **Utiliser avec Codex** to copy the handoff instruction.
+5. To combine workflows, open **Composer des skills**, select two to eight ready skills, and arrange them under **Ordre d’exécution** using the up and down buttons. Generate the parent skill and review it before downloading. Give Codex the parent and the child skills it references.
+
+Use **Renommer** in the library to change the display name. The Codex identifier, Markdown, and downloaded filename keep the generated skill name.
 
 ## Product overview
 
@@ -44,7 +57,7 @@ The human validation step is deliberate: Mimex does not silently decide the fina
 
 ### Video capture and import
 
-- Upload MP4, MOV, WebM, or MKV videos up to 200 MB.
+- Upload MP4, MOV, or WebM videos up to 200 MB in the browser. The Netlify upload API also accepts MKV.
 - Record a browser tab, application window, or screen from Chrome or Edge.
 - Preview the selected recording before processing it.
 - Upload media in 4 MB chunks to remain compatible with serverless request limits.
@@ -359,6 +372,8 @@ Content-Type: application/json
   "startUrl": "https://example.netlify.app"
 }
 ```
+
+The API accepts a run in `awaiting_goal` and returns `202` when the worker accepts the generation request. If dispatch fails, the API returns `502` and restores `awaiting_goal` with the edited objective so the user can retry.
 
 ### Manage a generated skill
 
