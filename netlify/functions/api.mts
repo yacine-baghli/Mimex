@@ -141,7 +141,14 @@ export default async function handler(request: Request): Promise<Response> {
       run.status = "generating"
       run.error = undefined
       await saveRun(run)
-      await startWorker(request, id, "skill")
+      try {
+        await startWorker(request, id, "skill")
+      } catch (error) {
+        run.status = "awaiting_goal"
+        run.error = error instanceof Error ? error.message : "Impossible de démarrer la génération."
+        await saveRun(run)
+        return json(502, { error: run.error })
+      }
       return json(202, { run: publicRun(run) })
     }
 
@@ -160,9 +167,11 @@ export default async function handler(request: Request): Promise<Response> {
 
     if (request.method === "PATCH" && parts.length === 2) {
       const body = await bodyJson(request)
+      const displayName = typeof body.displayName === "string" ? body.displayName.trim().slice(0, 100) : ""
       const skillName = typeof body.skillName === "string" ? body.skillName.trim().slice(0, 100) : ""
-      if (!run.output || !skillName) return json(422, { error: "Nom invalide." })
-      run.output.skillName = skillName
+      if (!run.output || (!displayName && !skillName)) return json(422, { error: "Nom invalide." })
+      if (displayName) run.displayName = displayName
+      else run.output.skillName = skillName
       await saveRun(run)
       return json(200, { run: publicRun(run) })
     }

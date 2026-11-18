@@ -8,6 +8,7 @@ The project was designed and built collectively by the **Mimex team** for the Op
 
 ## Table of contents
 
+- [Quickstart](#quickstart)
 - [Product overview](#product-overview)
 - [Core features](#core-features)
 - [End-to-end workflow](#end-to-end-workflow)
@@ -25,6 +26,18 @@ The project was designed and built collectively by the **Mimex team** for the Op
 - [Current scope and limitations](#current-scope-and-limitations)
 - [Troubleshooting](#troubleshooting)
 - [Team](#team)
+
+## Quickstart
+
+Use the Netlify deployment or [Netlify Dev](#test-the-netlify-runtime-locally) for the shared library, resumable validation, and composition.
+
+1. Open **Générer un skill**. Record a workflow or import an MP4, MOV, or WebM file up to 200 MB.
+2. Start the analysis, then review the proposed objective, observed actions, and uncertainties. Edit the objective if needed before generating the skill.
+3. To resume after closing or reloading the page, open **Bibliothèque**, find the run marked **Objectif à valider**, and select **Valider l’objectif**. Mimex reuses the uploaded recording.
+4. Once the skill is ready, select **Aperçu et copie** to inspect the Markdown. Use **Copier le Markdown** to copy its contents, or download the file and select **Utiliser avec Codex** to copy the handoff instruction.
+5. To combine workflows, open **Composer des skills**, select two to eight ready skills, and arrange them under **Ordre d’exécution** using the up and down buttons. Generate the parent skill and review it before downloading. Give Codex the parent and the child skills it references.
+
+Use **Renommer** in the library to change the display name. The Codex identifier, Markdown, and downloaded filename keep the generated skill name.
 
 ## Product overview
 
@@ -44,7 +57,7 @@ The human validation step is deliberate: Mimex does not silently decide the fina
 
 ### Video capture and import
 
-- Upload MP4, MOV, WebM, or MKV videos up to 200 MB.
+- Upload MP4, MOV, or WebM videos up to 200 MB in the browser. The Netlify upload API also accepts MKV.
 - Record a browser tab, application window, or screen from Chrome or Edge.
 - Preview the selected recording before processing it.
 - Upload media in 4 MB chunks to remain compatible with serverless request limits.
@@ -57,16 +70,17 @@ The human validation step is deliberate: Mimex does not silently decide the fina
 - Treat visible or spoken instructions as untrusted source material, not as instructions to the model.
 - Propose an objective, summary, ordered actions, uncertainties, and confidence score.
 - Require user validation before generating the final skill.
+- Resume objective validation from the library after closing or reloading the page.
 
 ### Skill generation and management
 
 - Generate a complete Markdown skill with YAML frontmatter.
 - Include the objective, authorized target, required inputs, ordered procedure, success criteria, and failure guidance.
-- Download the generated skill as a Markdown file.
+- Preview, copy, or download the generated Markdown from the library.
 - Copy a ready-to-use handoff instruction for Codex.
 - Store generated skills persistently in Netlify Blobs.
-- Rename, refine with AI, or delete an existing skill.
-- Compose two to eight skills into an ordered parent skill while keeping each child reusable.
+- Change a skill’s display name independently of its Codex identifier, refine it with AI, or delete it.
+- Compose two to eight skills into a parent skill, with controls to adjust their execution order before generation.
 
 ### Included demonstration environment
 
@@ -359,6 +373,8 @@ Content-Type: application/json
 }
 ```
 
+The API accepts a run in `awaiting_goal` and returns `202` when the worker accepts the generation request. If dispatch fails, the API returns `502` and restores `awaiting_goal` with the edited objective so the user can retry.
+
 ### Manage a generated skill
 
 ```http
@@ -367,6 +383,8 @@ PATCH  /api/runs/:runId
 POST   /api/runs/:runId/refine
 DELETE /api/runs/:runId
 ```
+
+Send `{ "displayName": "Customer onboarding" }` in a `PATCH` request to update the name shown in the library and composition picker. The Markdown content and Codex identifier stay the same.
 
 ### Compose skills
 

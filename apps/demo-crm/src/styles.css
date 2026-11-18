@@ -322,6 +322,11 @@ h2 {
 .compose-list button:last-child { border-bottom: 0; }
 .compose-list button.selected { color: #fff; background: #28603f; }
 .compose-list button span { display: grid; width: 25px; height: 25px; place-items: center; border: 1px solid currentColor; border-radius: 7px; font-size: 10px; }
+.composition-order { display: grid; gap: 8px; margin: 0; padding-inline-start: 24px; }
+.composition-order li { padding: 6px 0; border-bottom: 1px solid #e8ece9; overflow-wrap: anywhere; }
+.order-actions { display: inline-flex; gap: 4px; margin-inline-start: 10px; vertical-align: middle; }
+.compose-list button:disabled,
+.order-actions button:disabled { cursor: default; opacity: .55; }
 .composed-result { margin-top: 20px; padding: 24px; }
 .composed-result p { color: #69766e; }
 
@@ -1007,6 +1012,23 @@ form textarea:focus {
 .skill-path { overflow-wrap: anywhere; color: #567061; font-family: monospace; font-size: 10px; }
 .skill-result ul { padding-left: 18px; color: #705b27; font-size: 12px; }
 .skill-preview { max-height: 210px; overflow: auto; padding: 13px; color: #d8e6dc; border-radius: 9px; background: #17251d; font-size: 10px; line-height: 1.55; white-space: pre-wrap; }
+
+.skill-dialog {
+  width: min(720px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+}
+
+.skill-dialog::backdrop { background: rgb(12 25 18 / 58%); }
+.skill-dialog .modal-heading { gap: 16px; overflow-wrap: anywhere; }
+.skill-dialog .icon-button { flex-shrink: 0; }
+.skill-dialog-content { padding: 0 28px 24px; }
+.skill-dialog .skill-preview { max-height: 55vh; font-size: 12px; overflow-wrap: anywhere; }
+.skill-dialog .result-actions { flex-wrap: wrap; }
+.skill-copy-feedback { color: #315a42; font-size: 13px; }
+.skill-copy-feedback:not(:empty) { margin-top: 10px; }
 .result-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
