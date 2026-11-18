@@ -6,6 +6,7 @@ export type MimexRun = {
   updatedAt: string;
   appName: string;
   startUrl: string;
+  displayName?: string;
   approvedGoal?: string;
   proposal?: {
     goal: string;
@@ -89,8 +90,8 @@ export async function approveGoal(id: string, goal: string, appName: string, sta
   return body.run;
 }
 
-export async function fetchRuns(): Promise<MimexRun[]> {
-  const body = await api<ApiBody>("/api/runs", { cache: "no-store" });
+export async function fetchRuns(signal?: AbortSignal): Promise<MimexRun[]> {
+  const body = await api<ApiBody>("/api/runs", { cache: "no-store", signal: signal ?? null });
   return body.runs ?? [];
 }
 
@@ -102,9 +103,9 @@ export async function refineRun(id: string, instruction: string): Promise<MimexR
   return body.run;
 }
 
-export async function renameRun(id: string, skillName: string): Promise<MimexRun> {
+export async function renameRun(id: string, displayName: string): Promise<MimexRun> {
   const body = await api<ApiBody>(`/api/runs/${id}`, {
-    method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ skillName }),
+    method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName }),
   });
   if (!body.run) throw new Error("Skill renommé introuvable.");
   return body.run;
@@ -131,4 +132,8 @@ export function downloadMarkdown(markdown: string, name = "SKILL"): void {
   anchor.download = `${name.replace(/\.md$/iu, "")}.md`;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+export function codexHandoff(skillName: string): string {
+  return `Installe le fichier Markdown téléchargé depuis Mimex comme skill $${skillName}. Demande-moi les entrées obligatoires, puis reproduis la procédure dans l’application cible et vérifie le résultat.`;
 }

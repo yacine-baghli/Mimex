@@ -2,7 +2,7 @@ import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState
 import { Compose } from "./Compose";
 import { Library } from "./Library";
 import { Recorder } from "./Recorder";
-import { approveGoal, uploadVideo, usesNetlifyBackend, waitForRun, type MimexRun } from "./mimex-api";
+import { approveGoal, codexHandoff, downloadMarkdown, uploadVideo, usesNetlifyBackend, waitForRun, type MimexRun } from "./mimex-api";
 
 type Priority = "Basse" | "Normale" | "Haute";
 type View = "customers" | "skills" | "library" | "compose";
@@ -103,9 +103,10 @@ export function App() {
   const [codexPrompt, setCodexPrompt] = useState<string | null>(null);
   const [codexCopyState, setCodexCopyState] = useState<"idle" | "copied" | "manual">("idle");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [resumedRun, setResumedRun] = useState<MimexRun | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [libraryRefreshKey, setLibraryRefreshKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const busy = phase === "analyzing_goal" || phase === "generating";
 
   const videoUrl = useMemo(() => (video ? URL.createObjectURL(video) : null), [video]);
   useEffect(() => () => {
@@ -148,26 +149,31 @@ export function App() {
     setNotice("Données de démonstration réinitialisées");
   }
 
-  function selectVideo(file: File | undefined) {
+  function resetSkillFlow() {
+    setVideo(null);
     setVideoError(null);
+    setGenerationError(null);
     setResult(null);
     setGoalProposal(null);
     setApprovedGoal("");
     setCodexPrompt(null);
     setCodexCopyState("idle");
     setActiveRunId(null);
+    setResumedRun(null);
     setUploadProgress(0);
     setPhase("idle");
-    if (!file) return;
+  }
+
+  function selectVideo(file: File | undefined) {
+    if (!file || busy) return;
+    resetSkillFlow();
 
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
     if (!acceptedExtensions.includes(extension)) {
-      setVideo(null);
       setVideoError("Format non accepté. Utilise MP4, MOV ou WebM.");
       return;
     }
     if (file.size > maxVideoBytes) {
-      setVideo(null);
       setVideoError("La vidéo dépasse la limite de 200 Mo.");
       return;
     }
@@ -181,6 +187,29 @@ export function App() {
   function onDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     selectVideo(event.dataTransfer.files[0]);
+  }
+
+  function showProposal(proposal: NonNullable<MimexRun["proposal"]>) {
+    setGoalProposal({
+      status: "proposal_ready",
+      proposed_goal: proposal.goal,
+      summary: proposal.summary,
+      observed_actions: proposal.observedActions,
+      uncertainties: proposal.uncertainties,
+      confidence: proposal.confidence,
+    });
+    setApprovedGoal(proposal.goal);
+    setPhase("awaiting_validation");
+  }
+
+  function resumeGoal(run: MimexRun) {
+    if (busy || run.status !== "awaiting_goal" || !run.proposal) return;
+    resetSkillFlow();
+    showProposal(run.proposal);
+    setApprovedGoal(run.approvedGoal ?? run.proposal.goal);
+    setActiveRunId(run.id);
+    setResumedRun(run);
+    setView("skills");
   }
 
   async function analyzeGoal(formElement: HTMLFormElement) {
@@ -199,17 +228,7 @@ export function App() {
         setActiveRunId(runId);
         const run = await waitForRun(runId, ["awaiting_goal"]);
         if (!run.proposal) throw new Error("OpenAI n'a retourné aucun objectif exploitable.");
-        const proposal: GoalProposal = {
-          status: "proposal_ready",
-          proposed_goal: run.proposal.goal,
-          summary: run.proposal.summary,
-          observed_actions: run.proposal.observedActions,
-          uncertainties: run.proposal.uncertainties,
-          confidence: run.proposal.confidence,
-        };
-        setGoalProposal(proposal);
-        setApprovedGoal(run.proposal.goal);
-        setPhase("awaiting_validation");
+        showProposal(run.proposal);
         formElement.querySelector<HTMLTextAreaElement>('textarea[name="goal"]')?.focus();
         return;
       }
@@ -229,7 +248,7 @@ export function App() {
   }
 
   async function generateSkill(formElement: HTMLFormElement) {
-    if (!video || !goalProposal) return;
+    if ((!video && !activeRunId) || !goalProposal) return;
     const goal = approvedGoal.trim();
     if (goal.length < 5) {
       setGenerationError("Valide ou corrige l’objectif proposé avant de générer le skill.");
@@ -238,11 +257,13 @@ export function App() {
     }
 
     const form = new FormData(formElement);
-    form.set("video", video, video.name);
+    if (video) form.set("video", video, video.name);
     form.set("goal", goal);
     setPhase("generating");
     setGenerationError(null);
     setResult(null);
+    setCodexPrompt(null);
+    setCodexCopyState("idle");
 
     try {
       if (activeRunId) {
@@ -252,7 +273,6 @@ export function App() {
         const run = await waitForRun(activeRunId, ["succeeded"]);
         if (!run.output) throw new Error("Le fichier SKILL.md est absent du résultat.");
         setResult(runToLegacyResult(run));
-        setLibraryRefreshKey((value) => value + 1);
         setPhase("done");
         return;
       }
@@ -271,7 +291,8 @@ export function App() {
 
   async function handleSkillFlow(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!video) {
+    if (busy) return;
+    if (!video && !activeRunId) {
       setVideoError("Ajoute la vidéo de ta démonstration.");
       return;
     }
@@ -281,18 +302,12 @@ export function App() {
 
   function downloadSkill() {
     if (!result?.skill_markdown) return;
-    const blob = new Blob([result.skill_markdown], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "SKILL.md";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadMarkdown(result.skill_markdown);
   }
 
   async function useWithCodex() {
     if (!result?.skill_name) return;
-    const prompt = `Installe le fichier SKILL.md téléchargé depuis Mimex comme skill $${result.skill_name}. Commence par me demander les entrées obligatoires, puis reproduis la procédure dans l'application cible et confirme visuellement le résultat.`;
+    const prompt = codexHandoff(result.skill_name);
     setCodexPrompt(prompt);
     try {
       await navigator.clipboard.writeText(prompt);
@@ -355,15 +370,18 @@ export function App() {
             </header>
 
             <section className="skill-layout">
-              <form className="skill-form panel" onSubmit={handleSkillFlow}>
+              <form className="skill-form panel" key={resumedRun?.id ?? "new"} onSubmit={handleSkillFlow}>
                 <div className="skill-form-heading"><span className="step-number">01</span><div><h2>Vidéo de démonstration</h2><p>MP4, MOV ou WebM · 200 Mo maximum · 5 minutes</p></div></div>
-                <div className={`drop-zone ${video ? "has-file" : ""}`} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} onClick={() => fileInputRef.current?.click()}>
+                {resumedRun ? <div className="goal-placeholder">
+                  <p>Analyse enregistrée pour <strong>{resumedRun.filename}</strong></p>
+                  <button className="text-action" type="button" disabled={busy} onClick={resetSkillFlow}>Analyser une autre vidéo</button>
+                </div> : <><div className={`drop-zone ${video ? "has-file" : ""}`} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} onClick={() => { if (!busy) fileInputRef.current?.click(); }}>
                   <input ref={fileInputRef} type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" onChange={onFileChange} hidden />
                   {video ? <><span className="file-icon">▶</span><strong>{video.name}</strong><small>{formatBytes(video.size)}</small><button className="replace-file" type="button">Remplacer</button></> : <><span className="upload-icon">↑</span><strong>Dépose ta vidéo ici</strong><small>ou clique pour parcourir tes fichiers</small></>}
                 </div>
                 <Recorder onVideo={(file) => selectVideo(file)} />
                 {videoError ? <p className="field-error" role="alert">{videoError}</p> : null}
-                {videoUrl ? <video className="video-preview" src={videoUrl} controls preload="metadata" /> : null}
+                {videoUrl ? <video className="video-preview" src={videoUrl} controls preload="metadata" /> : null}</>}
 
                 <div className="skill-form-heading compact"><span className="step-number">02</span><div><h2>Objectif proposé par OpenAI</h2><p>Analyse d’abord la vidéo, puis valide ou corrige la proposition.</p></div></div>
                 {goalProposal ? (
@@ -373,11 +391,11 @@ export function App() {
                     {goalProposal.summary ? <p>{goalProposal.summary}</p> : null}
                     {goalProposal.observed_actions?.length ? <ol>{goalProposal.observed_actions.map((action) => <li key={action}>{action}</li>)}</ol> : null}
                     {goalProposal.uncertainties?.length ? <div className="proposal-warning">À vérifier : {goalProposal.uncertainties.join(" · ")}</div> : null}
-                    <button className="text-action" type="button" onClick={() => { setGoalProposal(null); setApprovedGoal(""); setPhase("idle"); setGenerationError(null); }}>Relancer l’analyse de l’objectif</button>
+                    {video ? <button className="text-action" type="button" disabled={busy} onClick={() => { setGoalProposal(null); setApprovedGoal(""); setActiveRunId(null); setPhase("idle"); setGenerationError(null); }}>Relancer l’analyse de l’objectif</button> : null}
                   </div>
                 ) : <div className="goal-placeholder"><span>✦</span><p>L’objectif sera rempli automatiquement après l’analyse visuelle de la vidéo.</p></div>}
-                <div className="form-grid"><label>Application<input name="app_name" defaultValue="Mimex Demo CRM" required /></label><label>URL de départ<input name="start_url" type="url" defaultValue={window.location.origin} required /></label></div>
-                <button className="primary-button generate-button" type="submit" disabled={phase === "analyzing_goal" || phase === "generating"}>
+                <div className="form-grid"><label>Application<input name="app_name" defaultValue={resumedRun?.appName ?? "Mimex Demo CRM"} required /></label><label>URL de départ<input name="start_url" type="url" defaultValue={resumedRun?.startUrl || window.location.origin} required /></label></div>
+                <button className="primary-button generate-button" type="submit" disabled={busy || (phase === "done" && activeRunId !== null)}>
                   {phase === "analyzing_goal" ? <><span className="spinner" /> OpenAI analyse la vidéo…</> : phase === "generating" ? <><span className="spinner" /> Génération du skill…</> : goalProposal ? <>✓ Valider l’objectif et générer le skill</> : <>✦ Analyser la vidéo et proposer un objectif</>}
                 </button>
                 {phase === "analyzing_goal" && uploadProgress > 0 && uploadProgress < 100 ? <p className="privacy-note">Upload Netlify : {uploadProgress}%</p> : null}
@@ -416,7 +434,7 @@ export function App() {
               </aside>
             </section>
           </>
-        ) : view === "library" ? <Library refreshKey={libraryRefreshKey} /> : <Compose />}
+        ) : view === "library" ? <Library onResume={resumeGoal} canResume={!busy} /> : <Compose />}
       </main>
 
       {isFormOpen ? <div className="modal-backdrop" role="presentation" onMouseDown={() => setIsFormOpen(false)}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="new-customer-title" onMouseDown={(event) => event.stopPropagation()}><div className="modal-heading"><div><span className="eyebrow">NOUVELLE FICHE</span><h2 id="new-customer-title">Créer un client</h2><p>Renseignez les informations nécessaires au suivi.</p></div><button className="icon-button" type="button" aria-label="Fermer" onClick={() => setIsFormOpen(false)}>×</button></div><form onSubmit={createCustomer}><label>Nom complet<input name="customer_name" type="text" required autoFocus placeholder="ex. Ada Lovelace" /></label><label>Entreprise<input name="company_name" type="text" required placeholder="ex. Analytical Engines" /></label><label>Priorité<select name="priority" defaultValue="Normale" required><option>Basse</option><option>Normale</option><option>Haute</option></select></label><div className="form-actions"><button className="secondary-button" type="button" onClick={() => setIsFormOpen(false)}>Annuler</button><button className="primary-button" type="submit">Enregistrer</button></div></form></section></div> : null}

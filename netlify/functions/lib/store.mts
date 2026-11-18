@@ -35,6 +35,7 @@ export type RunRecord = {
   updatedAt: string
   appName: string
   startUrl: string
+  displayName?: string
   approvedGoal?: string
   proposal?: GoalProposal
   output?: SkillOutput
@@ -85,6 +86,7 @@ export function publicRun(run: RunRecord) {
     updatedAt: run.updatedAt,
     appName: run.appName,
     startUrl: run.startUrl,
+    displayName: run.displayName,
     approvedGoal: run.approvedGoal,
     proposal: run.proposal,
     output: run.output,

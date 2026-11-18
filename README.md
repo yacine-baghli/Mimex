@@ -57,16 +57,17 @@ The human validation step is deliberate: Mimex does not silently decide the fina
 - Treat visible or spoken instructions as untrusted source material, not as instructions to the model.
 - Propose an objective, summary, ordered actions, uncertainties, and confidence score.
 - Require user validation before generating the final skill.
+- Resume objective validation from the library after closing or reloading the page.
 
 ### Skill generation and management
 
 - Generate a complete Markdown skill with YAML frontmatter.
 - Include the objective, authorized target, required inputs, ordered procedure, success criteria, and failure guidance.
-- Download the generated skill as a Markdown file.
+- Preview, copy, or download the generated Markdown from the library.
 - Copy a ready-to-use handoff instruction for Codex.
 - Store generated skills persistently in Netlify Blobs.
-- Rename, refine with AI, or delete an existing skill.
-- Compose two to eight skills into an ordered parent skill while keeping each child reusable.
+- Change a skill’s display name independently of its Codex identifier, refine it with AI, or delete it.
+- Compose two to eight skills into a parent skill, with controls to adjust their execution order before generation.
 
 ### Included demonstration environment
 
@@ -367,6 +368,8 @@ PATCH  /api/runs/:runId
 POST   /api/runs/:runId/refine
 DELETE /api/runs/:runId
 ```
+
+Send `{ "displayName": "Customer onboarding" }` in a `PATCH` request to update the name shown in the library and composition picker. The Markdown content and Codex identifier stay the same.
 
 ### Compose skills
 
